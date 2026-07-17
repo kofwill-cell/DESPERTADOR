@@ -312,21 +312,20 @@ function stopSpeaking(){
   speakSession++;
   if(ttsCtrl){try{ttsCtrl.abort();}catch(e){} ttsCtrl=null;}
   if(ttsAudio){ttsAudio.pause();ttsAudio=null;}
-  try{speechSynthesis.cancel();speechSynthesis.resume();}catch(e){} // resume: destraba Android
+  try{speechSynthesis.cancel();}catch(e){}
 }
 
-// Voz del navegador con ÉNFASIS: divide en frases y varía tono/velocidad
+// Voz del navegador con ÉNFASIS: encola todas las frases DE INMEDIATO
+// (Android bloquea la voz si no arranca en el mismo toque del usuario)
 function speakSegmented(text,onEnd){
   if(!("speechSynthesis" in window)){if(onEnd)onEnd();return;}
   const my=++speakSession;
-  try{speechSynthesis.cancel();speechSynthesis.resume();}catch(e){}
+  try{speechSynthesis.cancel();}catch(e){}
   const parts=(text.match(/[^.!?¡¿\n]+[.!?]*/g)||[text]).map(s=>s.trim()).filter(Boolean);
   const chosen=speechSynthesis.getVoices().find(v=>v.name===$("voiceSelect").value);
-  let i=0;
-  function next(){
-    if(my!==speakSession)return;                        // otra voz tomó el control: abortar
-    if(i>=parts.length){if(onEnd)onEnd();return;}
-    const s=parts[i];const last=i===parts.length-1;
+  let done=0;
+  parts.forEach((s,idx)=>{
+    const last=idx===parts.length-1;
     const u=new SpeechSynthesisUtterance(s);
     u.lang="es-ES";
     if(chosen){u.voice=chosen;u.lang=chosen.lang;}
@@ -334,12 +333,11 @@ function speakSegmented(text,onEnd){
     else if(last){u.pitch=1.2;u.rate=1.0;}              // cierre: subida motivadora
     else if(/agenda|reunión|a las \d/i.test(s)){u.pitch=1.0;u.rate=0.92;} // agenda: pausado y claro
     else{u.pitch=1.08;u.rate=0.97;}
-    u.onend=()=>{i++;setTimeout(next,140);};            // micro-pausa entre frases
-    u.onerror=()=>{i++;next();};
-    speechSynthesis.speak(u);
-    try{speechSynthesis.resume();}catch(e){}            // Android: evita quedar en pausa
-  }
-  setTimeout(next,80); // pequeño respiro tras cancel() para que el motor se libere
+    u.onstart=()=>{ if(my!==speakSession){try{speechSynthesis.cancel();}catch(e){}} };
+    const fin=()=>{ done++; if(done>=parts.length&&my===speakSession&&onEnd)onEnd(); };
+    u.onend=fin; u.onerror=fin;
+    speechSynthesis.speak(u);                           // se encolan todas; el motor las lee en orden
+  });
 }
 
 // Voz expresiva con Gemini TTS (misma clave API)
