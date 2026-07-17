@@ -306,14 +306,25 @@ function loadVoices(){
 }
 if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
 
+// Control de sesión de voz: evita que dos voces se pisen o que el motor quede colgado
+let speakSession=0, ttsAudio=null, ttsCtrl=null;
+function stopSpeaking(){
+  speakSession++;
+  if(ttsCtrl){try{ttsCtrl.abort();}catch(e){} ttsCtrl=null;}
+  if(ttsAudio){ttsAudio.pause();ttsAudio=null;}
+  try{speechSynthesis.cancel();speechSynthesis.resume();}catch(e){} // resume: destraba Android
+}
+
 // Voz del navegador con ÉNFASIS: divide en frases y varía tono/velocidad
 function speakSegmented(text,onEnd){
   if(!("speechSynthesis" in window)){if(onEnd)onEnd();return;}
-  speechSynthesis.cancel();
+  const my=++speakSession;
+  try{speechSynthesis.cancel();speechSynthesis.resume();}catch(e){}
   const parts=(text.match(/[^.!?¡¿\n]+[.!?]*/g)||[text]).map(s=>s.trim()).filter(Boolean);
   const chosen=speechSynthesis.getVoices().find(v=>v.name===$("voiceSelect").value);
   let i=0;
   function next(){
+    if(my!==speakSession)return;                        // otra voz tomó el control: abortar
     if(i>=parts.length){if(onEnd)onEnd();return;}
     const s=parts[i];const last=i===parts.length-1;
     const u=new SpeechSynthesisUtterance(s);
@@ -326,8 +337,9 @@ function speakSegmented(text,onEnd){
     u.onend=()=>{i++;setTimeout(next,140);};            // micro-pausa entre frases
     u.onerror=()=>{i++;next();};
     speechSynthesis.speak(u);
+    try{speechSynthesis.resume();}catch(e){}            // Android: evita quedar en pausa
   }
-  next();
+  setTimeout(next,80); // pequeño respiro tras cancel() para que el motor se libere
 }
 
 // Voz expresiva con Gemini TTS (misma clave API)
@@ -342,15 +354,17 @@ function pcmBase64ToWavUrl(b64,rate){
   ws(36,"data");v.setUint32(40,pcm.length,true);
   return URL.createObjectURL(new Blob([h,pcm],{type:"audio/wav"}));
 }
-let ttsAudio=null;
 function speakGemini(text,onEnd){
   const key=$("geminiKey").value.trim();
   if(!key){speakSegmented(text,onEnd);return;}
+  const my=++speakSession;
   const voice=$("geminiVoice").value||"Puck";
   const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
   const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
   const ctrl=new AbortController();
+  ttsCtrl=ctrl;
   const timer=setTimeout(()=>ctrl.abort(),30000);
+  $("status").textContent="🎙️ Generando voz con Gemini...";
   fetch(url,{
     method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -363,19 +377,27 @@ function speakGemini(text,onEnd){
   .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
   .then(d=>{
     clearTimeout(timer);
+    if(my!==speakSession)return;                       // el usuario ya cambió de voz
+    $("status").textContent="";
     const part=d.candidates[0].content.parts.find(p=>p.inlineData);
     const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
     const rate=rateM?+rateM[1]:24000;
     ttsAudio=new Audio(pcmBase64ToWavUrl(part.inlineData.data,rate));
-    ttsAudio.onended=()=>{if(onEnd)onEnd();};
-    ttsAudio.onerror=()=>{speakSegmented(text,onEnd);};
-    ttsAudio.play().catch(()=>speakSegmented(text,onEnd));
+    ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
+    ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd);};
+    ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd);});
   })
-  .catch(()=>{clearTimeout(timer);speakSegmented(text,onEnd);}); // respaldo automático
+  .catch(()=>{
+    clearTimeout(timer);
+    if(my!==speakSession)return;                       // abortado a propósito: no hablar
+    $("status").textContent="";
+    speakSegmented(text,onEnd);                        // respaldo automático
+  });
 }
 
-// Selector unificado de voz
+// Selector unificado de voz (siempre detiene la voz anterior primero)
 function speak(text,onEnd){
+  stopSpeaking();
   if($("voiceEngine").value==="gemini")speakGemini(text,onEnd);
   else speakSegmented(text,onEnd);
 }
@@ -807,8 +829,7 @@ function stopMusic(){
   stopPreset();
   if(libAudio)libAudio.pause();
   if(customAudio)customAudio.pause();
-  if(ttsAudio){ttsAudio.pause();ttsAudio=null;}
-  speechSynthesis.cancel();
+  stopSpeaking();
 }
 $("previewBtn").addEventListener("click",()=>{
   if(previewing){stopMusic();previewing=false;$("previewBtn").textContent="▶ Escuchar muestra";return;}
