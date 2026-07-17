@@ -214,7 +214,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = 11;
+const APP_VERSION = 12;
 const $ = id => document.getElementById(id);
 let customAudio=null, melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
@@ -595,7 +595,7 @@ Reglas: máximo 160 palabras, español natural hablado, texto plano corrido, sin
     fetch(`https://generativelanguage.googleapis.com/v1beta/models/${models[i]}:generateContent?key=${key}`,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,maxOutputTokens:600}}),
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,maxOutputTokens:4096}}),
       signal:ctrl.signal
     })
     .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
