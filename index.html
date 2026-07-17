@@ -14,6 +14,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
+    color-scheme:dark; /* controles nativos (menús, selectores) en modo oscuro */
     --bg:#0b0b12; --text:#f7f6fb; --muted:#9b98ad;
     --purple:#6d4fc2; --coral:#ff5a5f; --teal:#16c3a6; --amber:#ffb627;
     --ok:#7ce38b; --warn:#ff8a8a; --accent2:#ffd166;
@@ -60,6 +61,7 @@
     width:100%;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.15);
     background:rgba(255,255,255,.06);color:var(--text);font-size:1rem}
   textarea{resize:vertical;min-height:56px}
+  select option{background:#16161f;color:var(--text)} /* opciones legibles en Android */
   .daybtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
     background:rgba(255,255,255,.06);color:var(--muted);font-weight:600;font-size:.9rem;margin:3px}
   .daybtn.sel{background:var(--purple);color:#fff;border-color:transparent}
@@ -247,7 +249,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = 13;
+const APP_VERSION = 14;
 const $ = id => document.getElementById(id);
 let melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
@@ -349,9 +351,10 @@ function stopSpeaking(){
 }
 
 // Voz del navegador con énfasis (encola de inmediato: Android lo exige)
-function speakSegmented(text,onEnd){
+function speakSegmented(text,onEnd,onStart){
   if(!("speechSynthesis" in window)){if(onEnd)onEnd();return;}
   const my=++speakSession;
+  if(onStart)onStart(); // esta voz arranca de inmediato
   try{speechSynthesis.cancel();}catch(e){}
   const parts=(text.match(/[^.!?¡¿\n]+[.!?]*/g)||[text]).map(s=>s.trim()).filter(Boolean);
   const chosen=speechSynthesis.getVoices().find(v=>v.name===$("voiceSelect").value);
@@ -395,21 +398,19 @@ function pcmBase64ToWavUrl(b64,rate){
   ws(36,"data");v.setUint32(40,pcm.length,true);
   return URL.createObjectURL(new Blob([h,pcm],{type:"audio/wav"}));
 }
-function speakGemini(text,onEnd){
+// Genera el audio de Gemini y devuelve la URL (o null). Se usa para hablar Y para pre-generar.
+function geminiTTSUrl(text){
   const key=$("geminiKey").value.trim();
-  if(!key){speakSegmented(text,onEnd);return;}
-  const my=++speakSession;
+  if(!key)return Promise.resolve(null);
   const voice=$("geminiVoice").value||"Puck";
   const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
   const ttsModels=["gemini-3.1-flash-tts-preview","gemini-2.5-flash-preview-tts"];
   function intentoTTS(i){
-    if(my!==speakSession)return;
-    if(i>=ttsModels.length){$("status").textContent="";speakSegmented(text,onEnd);return;}
+    if(i>=ttsModels.length)return Promise.resolve(null);
     const ctrl=new AbortController();
     ttsCtrl=ctrl;
-    const timer=setTimeout(()=>ctrl.abort(),30000);
-    $("status").textContent="🎙️ Generando voz...";
-    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
+    const timer=setTimeout(()=>ctrl.abort(),40000);
+    return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         contents:[{parts:[{text:styled}]}],
@@ -418,34 +419,39 @@ function speakGemini(text,onEnd){
       }),
       signal:ctrl.signal
     })
-    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(r=>{clearTimeout(timer);if(!r.ok)throw new Error(r.status);return r.json();})
     .then(d=>{
-      clearTimeout(timer);
-      if(my!==speakSession)return;
-      $("status").textContent="";
       const part=d.candidates[0].content.parts.find(p=>p.inlineData);
       const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
-      const rate=rateM?+rateM[1]:24000;
-      ttsAudio=new Audio(pcmBase64ToWavUrl(part.inlineData.data,rate));
-      ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
-      ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd);};
-      ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd);});
+      return pcmBase64ToWavUrl(part.inlineData.data,rateM?+rateM[1]:24000);
     })
     .catch(err=>{
       clearTimeout(timer);
-      if(my!==speakSession)return;
-      if(String(err.message)==="404"){intentoTTS(i+1);return;}
-      $("status").textContent="";
-      speakSegmented(text,onEnd);
+      if(String(err.message)==="404")return intentoTTS(i+1);
+      return null;
     });
   }
-  intentoTTS(0);
+  return intentoTTS(0);
+}
+function speakGemini(text,onEnd,onStart){
+  const my=++speakSession;
+  $("status").textContent="🎙️ Generando voz...";
+  geminiTTSUrl(text).then(url=>{
+    if(my!==speakSession)return;
+    $("status").textContent="";
+    if(!url){speakSegmented(text,onEnd,onStart);return;}
+    if(onStart)onStart();
+    ttsAudio=new Audio(url);
+    ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
+    ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd,onStart);};
+    ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd,onStart);});
+  });
 }
 
-function speak(text,onEnd){
+function speak(text,onEnd,onStart){
   stopSpeaking();
-  if($("voiceEngine").value==="gemini")speakGemini(text,onEnd);
-  else speakSegmented(text,onEnd);
+  if($("voiceEngine").value==="gemini"&&$("geminiKey").value.trim())speakGemini(text,onEnd,onStart);
+  else speakSegmented(text,onEnd,onStart);
 }
 function refreshVoiceBoxes(){
   const g=$("voiceEngine").value==="gemini";
@@ -893,11 +899,35 @@ function shouldFireToday(now){
   if(mode==="custom")return selectedDays.has(now.getDay());
   return true;
 }
+// Pre-generación: 3 minutos antes de la alarma prepara briefing y voz para que suene AL INSTANTE
+let prep={key:"",msg:null,audioUrl:null,preparing:false};
+function prepKey(now){return now.toDateString()+" "+$("alarmTime").value;}
+function prepareWake(now){
+  const k=prepKey(now);
+  if(prep.preparing||prep.key===k)return;
+  prep.preparing=true;
+  fetchWeather();
+  refreshCalendar(()=>{
+    const build=msg=>{
+      if($("voiceEngine").value==="gemini"&&$("geminiKey").value.trim()){
+        geminiTTSUrl(msg).then(url=>{prep={key:k,msg,audioUrl:url,preparing:false};});
+      }else prep={key:k,msg,audioUrl:null,preparing:false};
+    };
+    if($("useAI").checked)generateAIPhrase(p=>build(p||smartBriefing()));
+    else build(smartBriefing());
+  });
+}
 function checkAlarm(now){
   if(snoozeUntil&&now>=snoozeUntil){snoozeUntil=null;fireAlarm();return;}
   if(!alarmArmed)return;
   const key=now.toDateString();
   if(lastFiredDate===key)return;
+  if(shouldFireToday(now)){
+    const [h,m]=$("alarmTime").value.split(":").map(Number);
+    const target=new Date(now);target.setHours(h,m,0,0);
+    const diff=(target-now)/1000;
+    if(diff>0&&diff<=180)prepareWake(now); // prepara la voz con anticipación
+  }
   const hhmm=now.toTimeString().slice(0,5);
   if(hhmm===$("alarmTime").value&&shouldFireToday(now)){
     lastFiredDate=key;
@@ -906,15 +936,36 @@ function checkAlarm(now){
   }
 }
 function fireAlarm(){
-  const show=msg=>{
+  const now=new Date();
+  // Caso ideal: la voz ya está pre-generada → suena al instante
+  if(prep.msg&&prep.key===prepKey(now)){
+    const msg=prep.msg, url=prep.audioUrl;
+    prep={key:"",msg:null,audioUrl:null,preparing:false};
     $("alarmMsg").textContent=msg;
     $("alarmScreen").classList.add("on");
-    speak(msg,playMusic);
-  };
+    if(url){
+      stopSpeaking();
+      const my=speakSession;
+      ttsAudio=new Audio(url);
+      ttsAudio.onended=()=>{if(my===speakSession)playMusic();};
+      ttsAudio.onerror=()=>{speak(msg,playMusic,stopMelody);};
+      ttsAudio.play().catch(()=>speak(msg,playMusic,stopMelody));
+    }else{
+      speak(msg,playMusic,stopMelody);
+    }
+    return;
+  }
+  // Sin pre-generación: campanas DE INMEDIATO mientras se prepara la voz
+  playBells();
+  $("alarmMsg").textContent="Preparando tu briefing...";
+  $("alarmScreen").classList.add("on");
   refreshCalendar(()=>{
-    if($("useAI").checked){
-      generateAIPhrase(script=>show(script||smartBriefing()));
-    }else show(smartBriefing());
+    const go=msg=>{
+      $("alarmMsg").textContent=msg;
+      speak(msg,playMusic,stopMelody); // al arrancar la voz, se apagan las campanas
+    };
+    if($("useAI").checked)generateAIPhrase(s=>go(s||smartBriefing()));
+    else go(smartBriefing());
   });
 }
 $("testBtn").addEventListener("click",()=>{
