@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f1b3d">
+<meta name="theme-color" content="#0b0b12">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,52 +14,73 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
-    --bg1:#0f1b3d; --bg2:#2a1b5e; --accent:#ff9d4d; --accent2:#ffd166;
-    --card:rgba(255,255,255,.07); --text:#f5f3ff; --muted:#b8b3d9; --ok:#7ce38b; --warn:#ff8a8a;
+    --bg:#0b0b12; --text:#f7f6fb; --muted:#9b98ad;
+    --purple:#6d4fc2; --coral:#ff5a5f; --teal:#16c3a6; --amber:#ffb627;
+    --ok:#7ce38b; --warn:#ff8a8a; --accent2:#ffd166;
   }
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
   html{font-size:16px}
-  body{min-height:100vh;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--text);
-    padding:max(16px,env(safe-area-inset-top)) 14px 110px 14px}
+  body{min-height:100vh;background:var(--bg);color:var(--text);
+    padding:max(18px,env(safe-area-inset-top)) 18px 120px 18px}
   .app{width:100%;max-width:480px;margin:0 auto}
-  h1{font-size:1.25rem;text-align:center}
-  .sub{text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:12px}
-  .clock{text-align:center;font-size:min(17vw,4rem);font-weight:300;letter-spacing:2px;line-height:1.1}
-  .date{text-align:center;color:var(--muted);margin-bottom:14px;text-transform:capitalize;font-size:.9rem}
-  details.card{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:0;margin-bottom:12px;overflow:hidden}
-  details.card>summary{list-style:none;cursor:pointer;padding:16px;font-size:1rem;color:var(--accent2);font-weight:600;display:flex;justify-content:space-between;align-items:center}
-  details.card>summary::-webkit-details-marker{display:none}
-  details.card>summary::after{content:"▾";color:var(--muted);transition:transform .2s}
-  details.card[open]>summary::after{transform:rotate(180deg)}
-  .inner{padding:0 16px 16px}
-  label{display:block;font-size:.85rem;color:var(--muted);margin:12px 0 5px}
-  input[type=text],input[type=time],input[type=url],input[type=password],select,textarea{
-    width:100%;padding:13px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
-    background:rgba(0,0,0,.25);color:var(--text);font-size:1rem}
-  textarea{resize:vertical;min-height:56px}
+  /* Cabecera estilo referencia */
+  h1{font-size:2.1rem;font-weight:800;line-height:1.08;letter-spacing:-.5px}
+  .clockrow{display:flex;align-items:baseline;justify-content:space-between;margin:14px 0 20px}
+  .clock{font-size:2.6rem;font-weight:300;letter-spacing:1px}
+  .date{color:var(--muted);font-size:.85rem;text-transform:capitalize;text-align:right;max-width:50%}
+  /* Cuadrícula de tarjetas */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .cardBtn{border:none;border-radius:28px;aspect-ratio:1/1.02;padding:16px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;
+    color:#fff;text-align:left;transition:transform .12s}
+  .cardBtn:active{transform:scale(.97)}
+  .c-purple{background:var(--purple)} .c-coral{background:var(--coral)}
+  .c-teal{background:var(--teal)} .c-amber{background:var(--amber)}
+  .cicon{font-size:2.5rem;background:rgba(255,255,255,.92);border-radius:20px;
+    width:74px;height:74px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(0,0,0,.25);align-self:center;margin-top:8px}
+  .clabel{font-size:1.15rem;font-weight:700}
+  .cstate{display:block;font-size:.68rem;font-weight:400;opacity:.85;margin-top:2px}
+  .status{text-align:center;margin-top:16px;font-size:.88rem;color:var(--accent2);min-height:1.2em}
   .hint{font-size:.78rem;color:var(--muted);margin-top:5px;line-height:1.45}
   .hint a{color:var(--accent2)}
-  .chip{display:inline-block;background:rgba(255,157,77,.15);border:1px solid rgba(255,157,77,.4);color:var(--accent2);border-radius:20px;padding:7px 11px;margin:5px 5px 0 0;font-size:.8rem;cursor:pointer}
-  .daybtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:var(--muted);font-weight:600;font-size:.9rem;margin:3px}
-  .daybtn.sel{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#2a1b5e;border-color:transparent}
-  .days{text-align:center;margin-top:8px}
-  button{cursor:pointer;border:none;border-radius:12px;padding:14px 18px;font-size:1rem;font-weight:600}
-  .btn-sm{padding:11px 14px;font-size:.88rem;background:rgba(255,255,255,.14);color:var(--text);margin-top:10px;width:100%}
-  .btn-google{background:#fff;color:#333;width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
-  .badge{font-size:.7rem;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,.3);color:var(--muted);margin-left:8px;font-weight:400}
+  /* Paneles (hojas) */
+  .sheet{position:fixed;inset:0;background:var(--bg);z-index:15;display:none;overflow-y:auto;
+    padding:max(18px,env(safe-area-inset-top)) 18px 40px 18px}
+  .sheet.open{display:block;animation:up .18s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+  .sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;
+    max-width:480px;margin-left:auto;margin-right:auto}
+  .sheethead h2{font-size:1.35rem;font-weight:800}
+  .closeBtn{background:rgba(255,255,255,.1);color:var(--text);border:none;border-radius:50%;
+    width:42px;height:42px;font-size:1.1rem;cursor:pointer}
+  .sheetbody{max-width:480px;margin:0 auto}
+  label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 5px}
+  input[type=text],input[type=time],input[type=url],input[type=password],select,textarea{
+    width:100%;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.06);color:var(--text);font-size:1rem}
+  textarea{resize:vertical;min-height:56px}
+  .daybtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.06);color:var(--muted);font-weight:600;font-size:.9rem;margin:3px}
+  .daybtn.sel{background:var(--purple);color:#fff;border-color:transparent}
+  .days{text-align:center;margin-top:10px}
+  button{cursor:pointer;border:none;border-radius:14px;padding:14px 18px;font-size:1rem;font-weight:600}
+  .btn-sm{padding:12px 14px;font-size:.88rem;background:rgba(255,255,255,.1);color:var(--text);margin-top:12px;width:100%}
+  .btn-google{background:#fff;color:#333;width:100%;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .badge{font-size:.7rem;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,.35);color:var(--muted);margin-left:8px;font-weight:400}
   .badge.on{color:var(--ok)} .badge.off{color:var(--warn)}
   input[type=file]{color:var(--muted);font-size:.85rem;margin-top:8px;max-width:100%}
   input[type=checkbox]{transform:scale(1.25);margin-right:9px}
-  .check{display:flex;align-items:center;font-size:.85rem;color:var(--muted);margin-top:12px}
-  code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:6px;font-size:.78rem;color:var(--accent2);word-break:break-all}
+  .check{display:flex;align-items:center;font-size:.85rem;color:var(--muted);margin-top:14px}
+  details{margin-top:14px}
+  details summary{cursor:pointer;color:var(--accent2);font-size:.88rem}
   #agendaPreview{font-size:.85rem;color:var(--muted);margin-top:10px;line-height:1.5}
-  .status{text-align:center;margin-top:10px;font-size:.88rem;color:var(--accent2);min-height:1.2em}
   /* Barra fija inferior */
-  .bottombar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));
-    background:rgba(15,27,61,.92);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.12);z-index:5}
-  .bottombar .wrap{max-width:480px;margin:0 auto;display:flex;gap:10px}
-  .btn-main{flex:2;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#2a1b5e}
-  .btn-test{flex:1;background:rgba(255,255,255,.14);color:var(--text);font-size:.9rem}
+  .bottombar{position:fixed;left:0;right:0;bottom:0;padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(11,11,18,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);z-index:5}
+  .bottombar .wrap{max-width:480px;margin:0 auto;display:flex;gap:12px}
+  .btn-main{flex:2;background:linear-gradient(90deg,var(--amber),var(--accent2));color:#151022;border-radius:18px;font-weight:700}
+  .btn-test{flex:1;background:rgba(255,255,255,.1);color:var(--text);font-size:.95rem;border-radius:18px}
   /* Pantalla de alarma */
   #alarmScreen{position:fixed;inset:0;background:linear-gradient(160deg,#ff6b35,#ff9d4d,#ffd166);
     display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;
@@ -76,123 +97,135 @@
 </head>
 <body>
 <div class="app">
-  <h1>🌅 Couch Personal</h1>
-  <p class="sub">Tu asistente que te despierta con energía y propósito</p>
-  <div class="clock" id="clock">--:--</div>
-  <div class="date" id="today"></div>
+  <h1>Despierta<br>con propósito 🌅</h1>
+  <div class="clockrow">
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="today"></div>
+  </div>
 
-  <!-- ALARMA -->
-  <details class="card" open>
-    <summary>⏰ Alarma</summary>
-    <div class="inner">
-      <label>Tu nombre</label>
-      <input type="text" id="userName" placeholder="Ej: Will">
-      <label>Hora</label>
-      <input type="time" id="alarmTime" value="06:30">
-      <label>Repetir</label>
-      <select id="repeatMode">
-        <option value="once">Una sola vez</option>
-        <option value="daily">Todos los días</option>
-        <option value="custom">Días específicos</option>
-      </select>
-      <div class="days" id="daysBox" style="display:none">
-        <button class="daybtn" data-d="1">L</button><button class="daybtn" data-d="2">M</button>
-        <button class="daybtn" data-d="3">X</button><button class="daybtn" data-d="4">J</button>
-        <button class="daybtn" data-d="5">V</button><button class="daybtn" data-d="6">S</button>
-        <button class="daybtn" data-d="0">D</button>
-      </div>
-      <div class="check"><input type="checkbox" id="wakeLock" checked><span>Mantener la pantalla encendida mientras la alarma esté activa (deja el celular conectado al cargador)</span></div>
-    </div>
-  </details>
-
-  <!-- VOZ -->
-  <details class="card">
-    <summary>🗣️ Voz del asistente <span class="badge" id="voiceBadge"></span></summary>
-    <div class="inner">
-      <label>Motor de voz</label>
-      <select id="voiceEngine">
-        <option value="gemini">🎙️ Gemini TTS — expresiva, como un coach (usa tu clave de IA)</option>
-        <option value="browser">📱 Voz del teléfono — gratis, con énfasis mejorado</option>
-      </select>
-      <div id="geminiVoiceBox">
-        <label>Voz de Gemini</label>
-        <select id="geminiVoice">
-          <option value="Puck">Puck — enérgica y alegre</option>
-          <option value="Kore">Kore — firme y motivadora</option>
-          <option value="Zephyr">Zephyr — brillante</option>
-          <option value="Aoede">Aoede — fresca y natural</option>
-          <option value="Charon">Charon — grave y serena</option>
-        </select>
-        <p class="hint">Requiere la clave API de la sección 🧠 IA. Si falla, uso automáticamente la voz del teléfono.</p>
-      </div>
-      <div id="browserVoiceBox">
-        <label>Voz del teléfono (en español)</label>
-        <select id="voiceSelect"><option value="">Cargando voces...</option></select>
-        <p class="hint">En Android, las voces marcadas ⭐ son las más naturales. Puedes instalar más en Ajustes → Sistema → Salida de texto a voz.</p>
-      </div>
-      <button class="btn-sm" id="voiceTestBtn">▶ Probar voz</button>
-    </div>
-  </details>
-
-  <!-- IA -->
-  <details class="card">
-    <summary>🧠 IA — frases personalizadas <span class="badge" id="aiBadge">sin conectar</span></summary>
-    <div class="inner">
-      <p class="hint" style="margin-top:2px">✅ Sin configurar nada, tu despertar ya incluye un briefing inteligente gratis: clima con consejo práctico, agenda priorizada, recomendaciones y tu meta del día. Lo de abajo es opcional, para frases generadas por IA.</p>
-      <div class="check"><input type="checkbox" id="useAI"><span>Usar Gemini para un briefing aún más personalizado (requiere clave)</span></div>
-      <label>Clave API de Gemini</label>
-      <input type="password" id="geminiKey" placeholder="Pega aquí tu clave (AIza...)">
-      <label>Modelo</label>
-      <input type="text" id="geminiModel" value="gemini-3.5-flash">
-      <p class="hint">Consigue tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> → "Crear clave de API". La clave se guarda solo en tu teléfono.</p>
-      <label>Tus metas y prioridades (el coach las usa para aconsejarte)</label>
-      <textarea id="goals" placeholder="Ej: Hacer crecer mi empresa de rescate. Hacer ejercicio 3 veces por semana. Dormir mejor."></textarea>
-      <button class="btn-sm" id="aiTestBtn">🔌 Probar IA — genera mi briefing de prueba</button>
-      <label>Frase de respaldo (si la IA no responde)</label>
-      <textarea id="phrase" placeholder="Escribe tu frase..."></textarea>
-      <p class="hint">Variables: <b>{nombre}</b>, <b>{fecha}</b>, <b>{hora}</b>, <b>{clima}</b>. Toca un ejemplo:</p>
-      <div id="examples"></div>
-    </div>
-  </details>
-
-  <!-- CALENDARIO -->
-  <details class="card">
-    <summary>📅 Agenda del día <span class="badge" id="calBadge">sin conectar</span></summary>
-    <div class="inner">
-      <button class="btn-google" id="gBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.4 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6C44 38 46.5 31.9 46.5 24.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.6-5.7l-7.7-6c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.6-3.9-13.5-9.3l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg> Conectar con Google Calendar</button>
-      <p class="hint" id="gHint">Vincula tu cuenta y leo tus eventos del día automáticamente.</p>
-      <details style="margin-top:10px">
-        <summary class="hint" style="cursor:pointer;color:var(--accent2)">Opción alternativa: URL secreta ICS</summary>
-        <label>URL secreta ICS de Google Calendar</label>
-        <input type="url" id="icsUrl" placeholder="https://calendar.google.com/calendar/ical/...basic.ics">
-        <div class="check"><input type="checkbox" id="useProxy"><span>Usar puente de conexión si Google bloquea la lectura directa (allorigins.win)</span></div>
-        <button class="btn-sm" id="calTestBtn">📥 Leer eventos de hoy (ICS)</button>
-      </details>
-      <div id="agendaPreview"></div>
-    </div>
-  </details>
-
-  <!-- MÚSICA -->
-  <details class="card">
-    <summary>🎵 Música (después del saludo)</summary>
-    <div class="inner">
-      <select id="musicChoice">
-        <option value="none">🗣️ Solo asistente de voz, sin música</option>
-        <option value="library">🎧 Mi música (guardada en tu teléfono)</option>
-      </select>
-      <div id="libraryBox">
-        <label>Agrega tus canciones (quedan guardadas SOLO en tu dispositivo, de forma privada)</label>
-        <input type="file" id="libFiles" accept="audio/*" multiple>
-        <div id="libList" class="hint"></div>
-        <div class="check"><input type="checkbox" id="libRotate" checked><span>Cada día suena una canción diferente (rotación automática)</span></div>
-      </div>
-      <button class="btn-sm" id="previewBtn">▶ Escuchar muestra</button>
-    </div>
-  </details>
+  <div class="grid">
+    <button class="cardBtn c-purple" data-panel="pAlarma">
+      <span class="clabel">Alarma<span class="cstate" id="stAlarma">toca para configurar</span></span>
+      <span class="cicon">⏰</span>
+    </button>
+    <button class="cardBtn c-coral" data-panel="pVoz">
+      <span class="clabel">Voz<span class="cstate" id="stVoz"></span></span>
+      <span class="cicon">🎙️</span>
+    </button>
+    <button class="cardBtn c-teal" data-panel="pAgenda">
+      <span class="clabel">Agenda<span class="cstate" id="stAgenda">sin conectar</span></span>
+      <span class="cicon">📅</span>
+    </button>
+    <button class="cardBtn c-amber" data-panel="pMusica">
+      <span class="clabel">Música<span class="cstate" id="stMusica"></span></span>
+      <span class="cicon">🎵</span>
+    </button>
+  </div>
 
   <p class="status" id="status"></p>
-  <p class="hint" style="text-align:center;margin-top:4px">⚠️ Mantén la app abierta en pantalla para que suene la alarma. Recomendado: celular cargando y pantalla encendida.</p>
+  <p class="hint" style="text-align:center;margin-top:6px">⚠️ Mantén la app abierta en pantalla para que suene la alarma (celular cargando).</p>
   <p class="hint" style="text-align:center" id="verInfo"></p>
+</div>
+
+<!-- PANEL ALARMA -->
+<div class="sheet" id="pAlarma">
+  <div class="sheethead"><h2>⏰ Alarma</h2><button class="closeBtn">✕</button></div>
+  <div class="sheetbody">
+    <label>Tu nombre</label>
+    <input type="text" id="userName" placeholder="Ej: Will">
+    <label>Hora</label>
+    <input type="time" id="alarmTime" value="06:30">
+    <label>Repetir</label>
+    <select id="repeatMode">
+      <option value="once">Una sola vez</option>
+      <option value="daily">Todos los días</option>
+      <option value="custom">Días específicos</option>
+    </select>
+    <div class="days" id="daysBox" style="display:none">
+      <button class="daybtn" data-d="1">L</button><button class="daybtn" data-d="2">M</button>
+      <button class="daybtn" data-d="3">X</button><button class="daybtn" data-d="4">J</button>
+      <button class="daybtn" data-d="5">V</button><button class="daybtn" data-d="6">S</button>
+      <button class="daybtn" data-d="0">D</button>
+    </div>
+    <label>Tus metas y prioridades (tu coach las usa para aconsejarte cada mañana)</label>
+    <textarea id="goals" placeholder="Ej: Hacer crecer mi empresa. Entrenar 3 veces por semana."></textarea>
+    <div class="check"><input type="checkbox" id="wakeLock" checked><span>Mantener la pantalla encendida mientras la alarma esté activa</span></div>
+  </div>
+</div>
+
+<!-- PANEL VOZ -->
+<div class="sheet" id="pVoz">
+  <div class="sheethead"><h2>🎙️ Voz del asistente <span class="badge" id="voiceBadge"></span></h2><button class="closeBtn">✕</button></div>
+  <div class="sheetbody">
+    <label>Motor de voz</label>
+    <select id="voiceEngine">
+      <option value="gemini">🎙️ Gemini — expresiva, como un coach (usa tu clave)</option>
+      <option value="browser">📱 Voz del teléfono — gratis</option>
+    </select>
+    <div id="geminiVoiceBox">
+      <label>Voz de Gemini</label>
+      <select id="geminiVoice">
+        <option value="Puck">Puck — enérgica y alegre</option>
+        <option value="Kore">Kore — firme y motivadora</option>
+        <option value="Zephyr">Zephyr — brillante</option>
+        <option value="Aoede">Aoede — fresca y natural</option>
+        <option value="Charon">Charon — grave y serena</option>
+      </select>
+      <label>Clave API de Gemini (alimenta la voz)</label>
+      <input type="password" id="geminiKey" placeholder="Pega aquí tu clave (AIza...)">
+      <p class="hint">Gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Se guarda solo en tu teléfono. Si la voz falla, uso la del teléfono automáticamente.</p>
+    </div>
+    <div id="browserVoiceBox">
+      <label>Voz del teléfono (en español)</label>
+      <select id="voiceSelect"><option value="">Cargando voces...</option></select>
+      <p class="hint">Puedes instalar más voces en Ajustes → Sistema → Salida de texto a voz.</p>
+    </div>
+    <button class="btn-sm" id="voiceTestBtn">▶ Probar voz</button>
+    <details>
+      <summary>Avanzado: briefing generado con IA <span class="badge" id="aiBadge">apagado</span></summary>
+      <div class="check"><input type="checkbox" id="useAI"><span>Usar Gemini también para redactar el briefing (por defecto lo redacta el coach integrado, gratis)</span></div>
+      <label>Modelo</label>
+      <input type="text" id="geminiModel" value="gemini-3.5-flash">
+      <button class="btn-sm" id="aiTestBtn">🔌 Probar briefing con IA</button>
+    </details>
+  </div>
+</div>
+
+<!-- PANEL AGENDA -->
+<div class="sheet" id="pAgenda">
+  <div class="sheethead"><h2>📅 Agenda del día <span class="badge" id="calBadge">sin conectar</span></h2><button class="closeBtn">✕</button></div>
+  <div class="sheetbody">
+    <button class="btn-google" id="gBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.4 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6C44 38 46.5 31.9 46.5 24.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.6-5.7l-7.7-6c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.6-3.9-13.5-9.3l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg> Conectar con Google Calendar</button>
+    <p class="hint" id="gHint">Vincula tu cuenta y leo tus eventos del día automáticamente.</p>
+    <details>
+      <summary>Opción alternativa: URL secreta ICS</summary>
+      <label>URL secreta ICS de Google Calendar</label>
+      <input type="url" id="icsUrl" placeholder="https://calendar.google.com/calendar/ical/...basic.ics">
+      <div class="check"><input type="checkbox" id="useProxy"><span>Usar puente de conexión si Google bloquea la lectura directa (allorigins.win)</span></div>
+      <button class="btn-sm" id="calTestBtn">📥 Leer eventos de hoy (ICS)</button>
+    </details>
+    <div id="agendaPreview"></div>
+  </div>
+</div>
+
+<!-- PANEL MÚSICA -->
+<div class="sheet" id="pMusica">
+  <div class="sheethead"><h2>🎵 Música (después del saludo)</h2><button class="closeBtn">✕</button></div>
+  <div class="sheetbody">
+    <select id="musicChoice">
+      <option value="none">🗣️ Solo asistente de voz, sin música</option>
+      <option value="library">🎧 Mi música (guardada en tu teléfono)</option>
+      <option value="bells">🔔 Campanas suaves</option>
+    </select>
+    <div id="libraryBox">
+      <label>Agrega tus canciones (quedan guardadas SOLO en tu dispositivo, de forma privada)</label>
+      <input type="file" id="libFiles" accept="audio/*" multiple>
+      <div id="libList" class="hint"></div>
+      <div class="check"><input type="checkbox" id="libRotate" checked><span>Cada día suena una canción diferente (rotación automática)</span></div>
+      <p class="hint">Si aún no has cargado canciones, sonarán las campanas suaves.</p>
+    </div>
+    <button class="btn-sm" id="previewBtn">▶ Escuchar muestra</button>
+  </div>
 </div>
 
 <div class="bottombar">
@@ -214,36 +247,33 @@
 
 <script>
 "use strict";
-const APP_VERSION = 12;
+const APP_VERSION = 13;
 const $ = id => document.getElementById(id);
-let customAudio=null, melodyTimer=null, audioCtx=null, previewing=false;
+let melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
-let wx=null; // datos estructurados del clima para el briefing inteligente
+let wx=null;
 let todayEvents=[], lastFiredDate=null, snoozeUntil=null;
 let selectedDays=new Set([1,2,3,4,5]);
 let alarmArmed=false, wakeLockObj=null;
 let gToken=null, gTokenClient=null;
 
-// ⚠️ CONFIGURA ESTO tras crear tu OAuth Client ID (ver GUIA-PUBLICACION.md):
 const GOOGLE_CLIENT_ID = "392361505389-9uh5qrs8af93c33vsup6v4kv96ls2fa8.apps.googleusercontent.com";
 
-// ---------- Ejemplos ----------
-const EXAMPLES=[
-  "¡{nombre}, hoy es un gran día para conquistar tus metas!",
-  "Arriba {nombre}, el mundo espera tu mejor versión.",
-  "{nombre}, cada amanecer es una nueva oportunidad. ¡Vamos con todo!",
-  "Despierta {nombre}: hoy es {fecha} y será un día increíble.",
-  "¡Buenos días {nombre}! Son las {hora}, hora de brillar."
-];
-EXAMPLES.forEach(t=>{
-  const c=document.createElement("span");
-  c.className="chip"; c.textContent=t;
-  c.onclick=()=>{ $("phrase").value=t; save(); };
-  $("examples").appendChild(c);
+// ---------- Paneles ----------
+document.querySelectorAll(".cardBtn").forEach(b=>{
+  b.addEventListener("click",()=>$(b.dataset.panel).classList.add("open"));
 });
+document.querySelectorAll(".closeBtn").forEach(b=>{
+  b.addEventListener("click",()=>{b.closest(".sheet").classList.remove("open");refreshCards();});
+});
+function refreshCards(){
+  $("stAlarma").textContent=alarmArmed?("activa · "+$("alarmTime").value):"toca para configurar";
+  $("stVoz").textContent=$("voiceEngine").value==="gemini"?($("geminiKey").value.trim()?"Gemini · "+$("geminiVoice").value:"Gemini (falta clave)"):"voz del teléfono";
+  $("stMusica").textContent=$("musicChoice").value==="none"?"sin música":$("musicChoice").value==="bells"?"campanas suaves":"mi música";
+}
 
 // ---------- Persistencia ----------
-const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","geminiModel","goals","phrase","icsUrl","useProxy","musicChoice","libRotate","wakeLock"];
+const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","geminiModel","goals","icsUrl","useProxy","musicChoice","libRotate","wakeLock"];
 function save(){
   try{
     const d={};
@@ -284,7 +314,7 @@ $("repeatMode").addEventListener("change",()=>{refreshDays();save();});
 function tick(){
   const n=new Date();
   $("clock").textContent=n.toLocaleTimeString("es-EC",{hour:"2-digit",minute:"2-digit"});
-  $("today").textContent=n.toLocaleDateString("es-EC",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  $("today").textContent=n.toLocaleDateString("es-EC",{weekday:"long",day:"numeric",month:"long"});
   checkAlarm(n);
 }
 
@@ -309,7 +339,7 @@ function loadVoices(){
 }
 if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
 
-// Control de sesión de voz: evita que dos voces se pisen o que el motor quede colgado
+// Control de sesión de voz
 let speakSession=0, ttsAudio=null, ttsCtrl=null;
 function stopSpeaking(){
   speakSession++;
@@ -318,8 +348,7 @@ function stopSpeaking(){
   try{speechSynthesis.cancel();}catch(e){}
 }
 
-// Voz del navegador con ÉNFASIS: encola todas las frases DE INMEDIATO
-// (Android bloquea la voz si no arranca en el mismo toque del usuario)
+// Voz del navegador con énfasis (encola de inmediato: Android lo exige)
 function speakSegmented(text,onEnd){
   if(!("speechSynthesis" in window)){if(onEnd)onEnd();return;}
   const my=++speakSession;
@@ -332,16 +361,16 @@ function speakSegmented(text,onEnd){
     const u=new SpeechSynthesisUtterance(s);
     u.lang="es-ES";
     if(chosen){u.voice=chosen;u.lang=chosen.lang;}
-    if(/!|¡/.test(s)){u.pitch=1.25;u.rate=1.05;}       // exclamaciones: arriba y con ritmo
-    else if(last){u.pitch=1.2;u.rate=1.0;}              // cierre: subida motivadora
-    else if(/agenda|reunión|a las \d/i.test(s)){u.pitch=1.0;u.rate=0.92;} // agenda: pausado y claro
+    if(/!|¡/.test(s)){u.pitch=1.25;u.rate=1.05;}
+    else if(last){u.pitch=1.2;u.rate=1.0;}
+    else if(/agenda|reunión|a las \d/i.test(s)){u.pitch=1.0;u.rate=0.92;}
     else{u.pitch=1.08;u.rate=0.97;}
     u.onstart=()=>{ if(my!==speakSession){try{speechSynthesis.cancel();}catch(e){}} };
     const fin=()=>{ done++; if(done>=parts.length&&my===speakSession&&onEnd)onEnd(); };
     u.onend=fin; u.onerror=fin;
-    speechSynthesis.speak(u);                           // se encolan todas; el motor las lee en orden
+    speechSynthesis.speak(u);
   });
-  // Reintento de seguridad: si en 2s no arrancó nada, habla en modo simple (estilo original)
+  // Reintento de seguridad: si en 2s no arrancó, habla en modo simple
   setTimeout(()=>{
     if(my!==speakSession||done>0||speechSynthesis.speaking)return;
     try{speechSynthesis.cancel();}catch(e){}
@@ -354,7 +383,7 @@ function speakSegmented(text,onEnd){
   },2000);
 }
 
-// Voz expresiva con Gemini TTS (misma clave API)
+// Voz expresiva con Gemini TTS
 function pcmBase64ToWavUrl(b64,rate){
   const bin=atob(b64);const pcm=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
@@ -372,7 +401,6 @@ function speakGemini(text,onEnd){
   const my=++speakSession;
   const voice=$("geminiVoice").value||"Puck";
   const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
-  // Prueba los modelos de voz en orden (Google los renombra seguido)
   const ttsModels=["gemini-3.1-flash-tts-preview","gemini-2.5-flash-preview-tts"];
   function intentoTTS(i){
     if(my!==speakSession)return;
@@ -380,7 +408,7 @@ function speakGemini(text,onEnd){
     const ctrl=new AbortController();
     ttsCtrl=ctrl;
     const timer=setTimeout(()=>ctrl.abort(),30000);
-    $("status").textContent="🎙️ Generando voz con Gemini...";
+    $("status").textContent="🎙️ Generando voz...";
     fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
@@ -393,7 +421,7 @@ function speakGemini(text,onEnd){
     .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
     .then(d=>{
       clearTimeout(timer);
-      if(my!==speakSession)return;                     // el usuario ya cambió de voz
+      if(my!==speakSession)return;
       $("status").textContent="";
       const part=d.candidates[0].content.parts.find(p=>p.inlineData);
       const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
@@ -405,16 +433,15 @@ function speakGemini(text,onEnd){
     })
     .catch(err=>{
       clearTimeout(timer);
-      if(my!==speakSession)return;                     // abortado a propósito: no hablar
-      if(String(err.message)==="404"){intentoTTS(i+1);return;} // modelo no existe: siguiente
+      if(my!==speakSession)return;
+      if(String(err.message)==="404"){intentoTTS(i+1);return;}
       $("status").textContent="";
-      speakSegmented(text,onEnd);                      // respaldo automático
+      speakSegmented(text,onEnd);
     });
   }
   intentoTTS(0);
 }
 
-// Selector unificado de voz (siempre detiene la voz anterior primero)
 function speak(text,onEnd){
   stopSpeaking();
   if($("voiceEngine").value==="gemini")speakGemini(text,onEnd);
@@ -425,7 +452,7 @@ function refreshVoiceBoxes(){
   $("geminiVoiceBox").style.display=g?"block":"none";
   $("browserVoiceBox").style.display=g?"none":"block";
 }
-$("voiceEngine").addEventListener("change",()=>{refreshVoiceBoxes();save();});
+$("voiceEngine").addEventListener("change",()=>{refreshVoiceBoxes();save();refreshCards();});
 $("voiceTestBtn").addEventListener("click",()=>{
   const name=$("userName").value.trim()||"amigo";
   speak(`¡Hola ${name}! Así sonará tu asistente cada mañana. ¡Hoy será un gran día!`);
@@ -469,7 +496,7 @@ fetchWeather();
 function initGoogle(){
   if(!window.google||!google.accounts){setTimeout(initGoogle,500);return;}
   if(GOOGLE_CLIENT_ID.startsWith("PEGA_AQUI")){
-    $("gHint").innerHTML="⚠️ Falta configurar el <b>Client ID</b> de Google (ver GUIA-PUBLICACION.md, sección 3). Mientras tanto usa la opción ICS.";
+    $("gHint").innerHTML="⚠️ Falta configurar el <b>Client ID</b> de Google. Mientras tanto usa la opción ICS.";
     return;
   }
   gTokenClient=google.accounts.oauth2.initTokenClient({
@@ -507,6 +534,7 @@ function fetchGoogleEvents(cb){
       });
       $("calBadge").textContent="Google conectado ("+todayEvents.length+" hoy)";
       $("calBadge").className="badge on";
+      $("stAgenda").textContent="Google · "+todayEvents.length+" eventos hoy";
       showAgenda(); if(cb)cb();
     })
     .catch(()=>{
@@ -550,6 +578,7 @@ function fetchICS(cb){
       todayEvents=parseICS(t);
       $("calBadge").textContent="ICS ("+todayEvents.length+" hoy)";
       $("calBadge").className="badge on";
+      $("stAgenda").textContent="ICS · "+todayEvents.length+" eventos hoy";
       showAgenda();save();if(cb)cb();
     })
     .catch(()=>{
@@ -565,7 +594,7 @@ function refreshCalendar(cb){
   else{if(cb)cb();}
 }
 
-// ---------- IA: briefing matutino del coach ----------
+// ---------- IA opcional: briefing redactado por Gemini ----------
 function generateAIPhrase(cb){
   const key=$("geminiKey").value.trim();
   if(!key){cb(null);return;}
@@ -580,9 +609,8 @@ function generateAIPhrase(cb){
   const metas=$("goals").value.trim()?`Sus metas y prioridades: ${$("goals").value.trim()}.`:"";
   const prompt=`Eres "Couch Personal", un coach cálido, cercano y enérgico que despierta a ${name} cada mañana. Genera el guion HABLADO completo de su despertar de hoy con estos datos reales:
 Fecha: ${fecha}. Hora: ${hora}. ${clima} ${agenda} ${metas}
-Estructura obligatoria: 1) Saludo enérgico con su nombre, la fecha, y recuérdale que hoy es un gran día. 2) El clima en una frase práctica (qué ponerse o llevar). 3) Repaso breve y priorizado de su agenda. 4) Una o dos recomendaciones ÚTILES y accionables conectando agenda, clima y metas (ej: salir antes si llueve, preparar algo antes de una reunión). 5) Cierre motivador breve.
+Estructura obligatoria: 1) Saludo enérgico con su nombre, la fecha, y recuérdale que hoy es un gran día. 2) El clima en una frase práctica (qué ponerse o llevar). 3) Repaso breve y priorizado de su agenda. 4) Una o dos recomendaciones ÚTILES y accionables conectando agenda, clima y metas. 5) Cierre motivador breve.
 Reglas: máximo 160 palabras, español natural hablado, texto plano corrido, sin emojis, sin listas, sin markdown, sin comillas.`;
-  // Prueba modelos en orden y se queda con el que funcione (Google los renombra seguido)
   const models=[...new Set([($("geminiModel").value.trim()||"gemini-3.5-flash"),
     "gemini-3.5-flash","gemini-flash-latest","gemini-2.5-flash"])];
   function intento(i){
@@ -605,12 +633,12 @@ Reglas: máximo 160 palabras, español natural hablado, texto plano corrido, sin
       try{phrase=d.candidates[0].content.parts.map(p=>p.text||"").join(" ").trim();}catch(e){}
       phrase=phrase.replace(/^["']|["']$/g,"").trim();
       $("aiBadge").textContent="conectado · "+models[i];$("aiBadge").className="badge on";
-      $("geminiModel").value=models[i];save(); // recuerda el modelo que sí funciona
+      $("geminiModel").value=models[i];save();
       cb(phrase||null);
     })
     .catch(err=>{
       clearTimeout(timer);
-      if(String(err.message)==="404"){intento(i+1);return;} // no existe: prueba el siguiente
+      if(String(err.message)==="404"){intento(i+1);return;}
       $("aiBadge").textContent="error ("+err.message+")";$("aiBadge").className="badge off";
       cb(null);
     });
@@ -618,8 +646,8 @@ Reglas: máximo 160 palabras, español natural hablado, texto plano corrido, sin
   intento(0);
 }
 $("aiTestBtn").addEventListener("click",()=>{
-  if(!$("geminiKey").value.trim()){$("status").textContent="⚠️ Primero pega tu clave API de Gemini.";return;}
-  $("status").textContent="🧠 Generando tu briefing (clima + agenda + metas)...";
+  if(!$("geminiKey").value.trim()){$("status").textContent="⚠️ Primero pega tu clave API en la sección de Voz.";return;}
+  $("status").textContent="🧠 Generando briefing con IA...";
   fetchWeather();
   refreshCalendar(()=>{
     generateAIPhrase(p=>{
@@ -630,19 +658,7 @@ $("aiTestBtn").addEventListener("click",()=>{
   save();
 });
 
-// ---------- Frase de respaldo ----------
-function fallbackPhrase(){
-  const n=new Date();
-  const name=$("userName").value.trim()||"campeón";
-  const fecha=n.toLocaleDateString("es-EC",{weekday:"long",day:"numeric",month:"long"});
-  const hora=n.toLocaleTimeString("es-EC",{hour:"2-digit",minute:"2-digit"});
-  const clima=weatherShort||"un clima perfecto para ti";
-  let p=$("phrase").value.trim()||EXAMPLES[0];
-  return p.replaceAll("{nombre}",name).replaceAll("{fecha}",fecha)
-          .replaceAll("{hora}",hora).replaceAll("{clima}",clima);
-}
-
-// ---------- Briefing inteligente SIN IA (reglas, costo cero) ----------
+// ---------- Briefing inteligente (reglas, costo cero) ----------
 const CLOSES=[
   "Recuerda: la constancia le gana al talento. ¡A brillar!",
   "Un paso a la vez, pero hoy mismo. ¡Tú puedes!",
@@ -660,7 +676,6 @@ function smartBriefing(){
   const goals=$("goals").value.split(/[.\n;]+/).map(s=>s.trim()).filter(Boolean);
   let msg=`¡Buenos días, ${name}! Hoy es ${fecha}, y es un gran día para ti. `;
 
-  // Clima con consejo práctico
   if(wx){
     msg+=`En ${cityName||"tu ciudad"} está ${wx.desc}, con ${wx.temp} grados`;
     if(wx.tmax!==null)msg+=` y máxima de ${wx.tmax}`;
@@ -671,7 +686,6 @@ function smartBriefing(){
     else if(wx.tmax!==null&&wx.tmax>=28)msg+="Hará calor: ropa ligera y lleva agua. ";
   }
 
-  // Agenda priorizada
   const timed=todayEvents.filter(e=>e.time);
   if(todayEvents.length){
     const top=todayEvents.slice(0,3).map(e=>(e.time?`a las ${e.time}, `:"")+e.title).join(". Después, ");
@@ -692,86 +706,68 @@ function smartBriefing(){
     else msg+="Elige una sola cosa importante y hazla antes del mediodía. ";
   }
 
-  // Meta del día (si hay agenda y también metas)
   if(todayEvents.length&&goals.length)
     msg+=`Y no pierdas de vista tu meta: ${goals[dayIndex()%goals.length].toLowerCase()}. `;
 
-  // Cierre: frase personalizada del usuario o rotación motivadora
-  msg+=$("phrase").value.trim()?fallbackPhrase():CLOSES[dayIndex()%CLOSES.length];
+  msg+=CLOSES[dayIndex()%CLOSES.length];
   return msg;
 }
 
-// ---------- Melodías ----------
-const MELODIES={
-  epic:{bpm:100,notes:[262,330,392,523,392,330,392,523,659,523,659,784]},
-  energy:{bpm:140,notes:[392,392,440,494,587,494,587,659,587,494,440,392]},
-  power:{bpm:120,notes:[330,415,494,659,494,659,740,659,494,415,494,330]}
-};
-function playMelody(key){
+// ---------- Campanas suaves (respaldo musical) ----------
+function playBells(){
   stopMelody();
   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==="suspended")audioCtx.resume();
-  const m=MELODIES[key];if(!m)return;
-  const beat=60/m.bpm;let i=0;
-  function note(){
+  const notes=[523.25,659.25,783.99,1046.5];
+  let i=0;
+  function ding(){
     const t=audioCtx.currentTime;
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type="triangle";o.frequency.value=m.notes[i%m.notes.length];
-    g.gain.setValueAtTime(0.0001,t);
-    g.gain.exponentialRampToValueAtTime(0.35,t+0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+beat*0.9);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t);o.stop(t+beat);i++;
+    const f=notes[i%notes.length];
+    [1,2.76,5.4].forEach((h,k)=>{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type="sine";o.frequency.value=f*h;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.22/(k+1),t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(t);o.stop(t+2.3);
+    });
+    i++;
   }
-  note();melodyTimer=setInterval(note,beat*1000);
+  ding();melodyTimer=setInterval(ding,1600);
 }
 function stopMelody(){if(melodyTimer){clearInterval(melodyTimer);melodyTimer=null;}}
 
-// ---------- Canciones predeterminadas (lista.json en el repositorio) ----------
+// ---------- Canciones predeterminadas (lista.json, opcional) ----------
 let SONGS=[]; let presetAudio=null;
 function populateMusic(){
   const sel=$("musicChoice");
-  // Por defecto: música de la biblioteca (si no hay, suena la melodía integrada)
   let stored; try{stored=JSON.parse(localStorage.getItem("couchV3")||"{}").musicChoice;}catch(e){}
   const saved=(stored!==undefined&&stored!=="")?stored:"library";
   sel.innerHTML="";
   const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
   add("none","🗣️ Solo asistente de voz, sin música");
   add("library","🎧 Mi música (guardada en tu teléfono)");
-  if(SONGS.length){
-    SONGS.forEach(s=>add("song:"+s.archivo,"🎵 "+s.nombre));
-  }else{
-    add("epic","🌄 Amanecer Épico (melodía integrada)");
-    add("energy","⚡ Energía Total (melodía integrada)");
-    add("power","🔥 Poder Matutino (melodía integrada)");
-  }
+  add("bells","🔔 Campanas suaves");
+  SONGS.forEach(s=>add("song:"+s.archivo,"🎵 "+s.nombre));
   if(saved&&[...sel.options].some(o=>o.value===saved))sel.value=saved;
+  else sel.value="library";
   refreshMusicBox();
 }
 fetch("lista.json",{cache:"no-store"})
   .then(r=>r.ok?r.json():null)
   .then(list=>{
-    if(Array.isArray(list)&&list.length){
-      SONGS=list;
-      populateMusic();
-      // reaplica la selección guardada tras cargar la lista
-      try{
-        const d=JSON.parse(localStorage.getItem("couchV3")||"{}");
-        if(d.musicChoice&&[...$("musicChoice").options].some(o=>o.value===d.musicChoice))
-          $("musicChoice").value=d.musicChoice;
-      }catch(e){}
-      refreshMusicBox();
-    }
+    if(Array.isArray(list)&&list.length){SONGS=list;populateMusic();}
   }).catch(()=>{});
 function playPreset(file){
   stopPreset();
   presetAudio=new Audio(encodeURI(file));
   presetAudio.loop=true;
-  presetAudio.play().catch(()=>playMelody("epic")); // respaldo si el archivo falla
+  presetAudio.play().catch(()=>playBells());
 }
 function stopPreset(){ if(presetAudio){presetAudio.pause();presetAudio=null;} }
 
-// ---------- Biblioteca personal (privada, guardada en el dispositivo) ----------
+// ---------- Biblioteca personal (privada) ----------
 let libAudio=null;
 function musicDB(){
   return new Promise((res,rej)=>{
@@ -836,30 +832,30 @@ $("libFiles").addEventListener("change",async e=>{
 $("libRotate").addEventListener("change",()=>{renderLib();save();});
 async function playLibrary(){
   const songs=await libAll().catch(()=>[]);
-  if(!songs.length){playMelody("epic");return;}
+  if(!songs.length){playBells();return;}
   const pick=$("libRotate").checked?songs[dayIndex()%songs.length]:songs[0];
   if(libAudio)libAudio.pause();
   libAudio=new Audio(URL.createObjectURL(pick.blob));
   libAudio.loop=true;
-  libAudio.play().catch(()=>playMelody("epic"));
+  libAudio.play().catch(()=>playBells());
   $("status").textContent="🎵 Hoy suena: "+pick.name;
 }
 
 // ---------- Música ----------
 function refreshMusicBox(){$("libraryBox").style.display=$("musicChoice").value==="library"?"block":"none";}
-$("musicChoice").addEventListener("change",()=>{refreshMusicBox();save();});
+$("musicChoice").addEventListener("change",()=>{refreshMusicBox();save();refreshCards();});
 function playMusic(){
   const c=$("musicChoice").value;
   if(c==="none")return;
   if(c==="library"){playLibrary();}
+  else if(c==="bells"){playBells();}
   else if(c.startsWith("song:")){playPreset(c.slice(5));}
-  else playMelody(c);
+  else playBells();
 }
 function stopMusic(){
   stopMelody();
   stopPreset();
   if(libAudio)libAudio.pause();
-  if(customAudio)customAudio.pause();
   stopSpeaking();
 }
 $("previewBtn").addEventListener("click",()=>{
@@ -869,7 +865,7 @@ $("previewBtn").addEventListener("click",()=>{
   setTimeout(()=>{if(previewing){stopMusic();previewing=false;$("previewBtn").textContent="▶ Escuchar muestra";}},8000);
 });
 
-// ---------- Wake Lock (pantalla encendida) ----------
+// ---------- Wake Lock ----------
 async function requestWakeLock(){
   if(!$("wakeLock").checked||!("wakeLock" in navigator))return;
   try{
@@ -888,7 +884,8 @@ $("setBtn").addEventListener("click",()=>{
   const mode=$("repeatMode").value;
   const mt=mode==="daily"?"todos los días":mode==="custom"?"los días seleccionados":"una vez";
   $("status").textContent=`⏰ Alarma activada para las ${$("alarmTime").value} (${mt}). Deja la app abierta y el celular cargando.`;
-  document.querySelectorAll("details.card").forEach(d=>d.open=false);
+  document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open"));
+  refreshCards();
 });
 function shouldFireToday(now){
   const mode=$("repeatMode").value;
@@ -916,9 +913,8 @@ function fireAlarm(){
   };
   refreshCalendar(()=>{
     if($("useAI").checked){
-      // Briefing con IA; si falla, cae al briefing inteligente (gratis)
       generateAIPhrase(script=>show(script||smartBriefing()));
-    }else show(smartBriefing()); // por defecto: briefing inteligente, costo cero
+    }else show(smartBriefing());
   });
 }
 $("testBtn").addEventListener("click",()=>{
@@ -938,7 +934,7 @@ $("snoozeBtn").addEventListener("click",()=>{
 
 // ---------- Arranque ----------
 FIELDS.forEach(id=>$(id).addEventListener("change",save));
-load();refreshDays();populateMusic();refreshVoiceBoxes();renderLib();
+load();refreshDays();populateMusic();refreshVoiceBoxes();renderLib();refreshCards();
 $("verInfo").textContent="Versión "+APP_VERSION;
 setInterval(tick,1000);tick();
 if(alarmArmed)requestWakeLock();
