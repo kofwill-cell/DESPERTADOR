@@ -1,5 +1,5 @@
 // Service worker básico: permite instalar como app y abre sin conexión.
-const CACHE = "couch-v9";
+const CACHE = "couch-v11";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

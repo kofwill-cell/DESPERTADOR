@@ -143,7 +143,7 @@
       <label>Clave API de Gemini</label>
       <input type="password" id="geminiKey" placeholder="Pega aquí tu clave (AIza...)">
       <label>Modelo</label>
-      <input type="text" id="geminiModel" value="gemini-2.5-flash">
+      <input type="text" id="geminiModel" value="gemini-3.5-flash">
       <p class="hint">Consigue tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> → "Crear clave de API". La clave se guarda solo en tu teléfono.</p>
       <label>Tus metas y prioridades (el coach las usa para aconsejarte)</label>
       <textarea id="goals" placeholder="Ej: Hacer crecer mi empresa de rescate. Hacer ejercicio 3 veces por semana. Dormir mejor."></textarea>
@@ -214,7 +214,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = 9;
+const APP_VERSION = 11;
 const $ = id => document.getElementById(id);
 let customAudio=null, melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
@@ -372,39 +372,46 @@ function speakGemini(text,onEnd){
   const my=++speakSession;
   const voice=$("geminiVoice").value||"Puck";
   const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
-  const ctrl=new AbortController();
-  ttsCtrl=ctrl;
-  const timer=setTimeout(()=>ctrl.abort(),30000);
-  $("status").textContent="🎙️ Generando voz con Gemini...";
-  fetch(url,{
-    method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      contents:[{parts:[{text:styled}]}],
-      generationConfig:{responseModalities:["AUDIO"],
-        speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:voice}}}}
-    }),
-    signal:ctrl.signal
-  })
-  .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
-  .then(d=>{
-    clearTimeout(timer);
-    if(my!==speakSession)return;                       // el usuario ya cambió de voz
-    $("status").textContent="";
-    const part=d.candidates[0].content.parts.find(p=>p.inlineData);
-    const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
-    const rate=rateM?+rateM[1]:24000;
-    ttsAudio=new Audio(pcmBase64ToWavUrl(part.inlineData.data,rate));
-    ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
-    ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd);};
-    ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd);});
-  })
-  .catch(()=>{
-    clearTimeout(timer);
-    if(my!==speakSession)return;                       // abortado a propósito: no hablar
-    $("status").textContent="";
-    speakSegmented(text,onEnd);                        // respaldo automático
-  });
+  // Prueba los modelos de voz en orden (Google los renombra seguido)
+  const ttsModels=["gemini-3.1-flash-tts-preview","gemini-2.5-flash-preview-tts"];
+  function intentoTTS(i){
+    if(my!==speakSession)return;
+    if(i>=ttsModels.length){$("status").textContent="";speakSegmented(text,onEnd);return;}
+    const ctrl=new AbortController();
+    ttsCtrl=ctrl;
+    const timer=setTimeout(()=>ctrl.abort(),30000);
+    $("status").textContent="🎙️ Generando voz con Gemini...";
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        contents:[{parts:[{text:styled}]}],
+        generationConfig:{responseModalities:["AUDIO"],
+          speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:voice}}}}
+      }),
+      signal:ctrl.signal
+    })
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(d=>{
+      clearTimeout(timer);
+      if(my!==speakSession)return;                     // el usuario ya cambió de voz
+      $("status").textContent="";
+      const part=d.candidates[0].content.parts.find(p=>p.inlineData);
+      const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
+      const rate=rateM?+rateM[1]:24000;
+      ttsAudio=new Audio(pcmBase64ToWavUrl(part.inlineData.data,rate));
+      ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
+      ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd);};
+      ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd);});
+    })
+    .catch(err=>{
+      clearTimeout(timer);
+      if(my!==speakSession)return;                     // abortado a propósito: no hablar
+      if(String(err.message)==="404"){intentoTTS(i+1);return;} // modelo no existe: siguiente
+      $("status").textContent="";
+      speakSegmented(text,onEnd);                      // respaldo automático
+    });
+  }
+  intentoTTS(0);
 }
 
 // Selector unificado de voz (siempre detiene la voz anterior primero)
@@ -575,30 +582,40 @@ function generateAIPhrase(cb){
 Fecha: ${fecha}. Hora: ${hora}. ${clima} ${agenda} ${metas}
 Estructura obligatoria: 1) Saludo enérgico con su nombre, la fecha, y recuérdale que hoy es un gran día. 2) El clima en una frase práctica (qué ponerse o llevar). 3) Repaso breve y priorizado de su agenda. 4) Una o dos recomendaciones ÚTILES y accionables conectando agenda, clima y metas (ej: salir antes si llueve, preparar algo antes de una reunión). 5) Cierre motivador breve.
 Reglas: máximo 160 palabras, español natural hablado, texto plano corrido, sin emojis, sin listas, sin markdown, sin comillas.`;
-  const model=$("geminiModel").value.trim()||"gemini-2.5-flash";
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),20000);
-  fetch(url,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,maxOutputTokens:600}}),
-    signal:ctrl.signal
-  })
-  .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
-  .then(d=>{
-    clearTimeout(timer);
-    let phrase="";
-    try{phrase=d.candidates[0].content.parts.map(p=>p.text||"").join(" ").trim();}catch(e){}
-    phrase=phrase.replace(/^["']|["']$/g,"").trim();
-    $("aiBadge").textContent="conectado";$("aiBadge").className="badge on";
-    cb(phrase||null);
-  })
-  .catch(err=>{
-    clearTimeout(timer);
-    $("aiBadge").textContent="error ("+err.message+")";$("aiBadge").className="badge off";
-    cb(null);
-  });
+  // Prueba modelos en orden y se queda con el que funcione (Google los renombra seguido)
+  const models=[...new Set([($("geminiModel").value.trim()||"gemini-3.5-flash"),
+    "gemini-3.5-flash","gemini-flash-latest","gemini-2.5-flash"])];
+  function intento(i){
+    if(i>=models.length){
+      $("aiBadge").textContent="error: modelo no disponible";$("aiBadge").className="badge off";
+      cb(null);return;
+    }
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),20000);
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${models[i]}:generateContent?key=${key}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,maxOutputTokens:600}}),
+      signal:ctrl.signal
+    })
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(d=>{
+      clearTimeout(timer);
+      let phrase="";
+      try{phrase=d.candidates[0].content.parts.map(p=>p.text||"").join(" ").trim();}catch(e){}
+      phrase=phrase.replace(/^["']|["']$/g,"").trim();
+      $("aiBadge").textContent="conectado · "+models[i];$("aiBadge").className="badge on";
+      $("geminiModel").value=models[i];save(); // recuerda el modelo que sí funciona
+      cb(phrase||null);
+    })
+    .catch(err=>{
+      clearTimeout(timer);
+      if(String(err.message)==="404"){intento(i+1);return;} // no existe: prueba el siguiente
+      $("aiBadge").textContent="error ("+err.message+")";$("aiBadge").className="badge off";
+      cb(null);
+    });
+  }
+  intento(0);
 }
 $("aiTestBtn").addEventListener("click",()=>{
   if(!$("geminiKey").value.trim()){$("status").textContent="⚠️ Primero pega tu clave API de Gemini.";return;}
@@ -607,7 +624,7 @@ $("aiTestBtn").addEventListener("click",()=>{
   refreshCalendar(()=>{
     generateAIPhrase(p=>{
       if(p){$("status").textContent="🧠 "+p;speak(p);}
-      else $("status").textContent="⚠️ Gemini no respondió. Revisa la clave o el nombre del modelo (prueba gemini-2.0-flash).";
+      else $("status").textContent="⚠️ Gemini no respondió. Revisa que la clave esté completa y con internet activo.";
     });
   });
   save();
@@ -714,7 +731,9 @@ function stopMelody(){if(melodyTimer){clearInterval(melodyTimer);melodyTimer=nul
 let SONGS=[]; let presetAudio=null;
 function populateMusic(){
   const sel=$("musicChoice");
-  const saved=sel.value;
+  // Por defecto: música de la biblioteca (si no hay, suena la melodía integrada)
+  let stored; try{stored=JSON.parse(localStorage.getItem("couchV3")||"{}").musicChoice;}catch(e){}
+  const saved=(stored!==undefined&&stored!=="")?stored:"library";
   sel.innerHTML="";
   const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
   add("none","🗣️ Solo asistente de voz, sin música");
