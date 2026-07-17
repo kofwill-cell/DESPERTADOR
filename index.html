@@ -178,14 +178,13 @@
     <div class="inner">
       <select id="musicChoice">
         <option value="none">🗣️ Solo asistente de voz, sin música</option>
-        <option value="custom">🎧 Mi propia canción (cargar archivo)</option>
-        <option value="epic">🌄 Amanecer Épico (melodía integrada)</option>
-        <option value="energy">⚡ Energía Total (melodía integrada)</option>
-        <option value="power">🔥 Poder Matutino (melodía integrada)</option>
+        <option value="library">🎧 Mi música (guardada en tu teléfono)</option>
       </select>
-      <div id="customFileBox">
-        <input type="file" id="songFile" accept="audio/*">
-        <p class="hint">Si cierras la app deberás volver a cargar la canción.</p>
+      <div id="libraryBox">
+        <label>Agrega tus canciones (quedan guardadas SOLO en tu dispositivo, de forma privada)</label>
+        <input type="file" id="libFiles" accept="audio/*" multiple>
+        <div id="libList" class="hint"></div>
+        <div class="check"><input type="checkbox" id="libRotate" checked><span>Cada día suena una canción diferente (rotación automática)</span></div>
       </div>
       <button class="btn-sm" id="previewBtn">▶ Escuchar muestra</button>
     </div>
@@ -242,7 +241,7 @@ EXAMPLES.forEach(t=>{
 });
 
 // ---------- Persistencia ----------
-const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","geminiModel","goals","phrase","icsUrl","useProxy","musicChoice","wakeLock"];
+const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","geminiModel","goals","phrase","icsUrl","useProxy","musicChoice","libRotate","wakeLock"];
 function save(){
   try{
     const d={};
@@ -677,28 +676,136 @@ function playMelody(key){
 }
 function stopMelody(){if(melodyTimer){clearInterval(melodyTimer);melodyTimer=null;}}
 
-// ---------- Música ----------
-function refreshMusicBox(){$("customFileBox").style.display=$("musicChoice").value==="custom"?"block":"none";}
-$("musicChoice").addEventListener("change",()=>{refreshMusicBox();save();});
-$("songFile").addEventListener("change",e=>{
-  const f=e.target.files[0];
-  if(f){
-    if(customAudio)customAudio.pause();
-    customAudio=new Audio(URL.createObjectURL(f));
-    customAudio.loop=true;
-    $("status").textContent=`🎧 Canción cargada: ${f.name}`;
+// ---------- Canciones predeterminadas (lista.json en el repositorio) ----------
+let SONGS=[]; let presetAudio=null;
+function populateMusic(){
+  const sel=$("musicChoice");
+  const saved=sel.value;
+  sel.innerHTML="";
+  const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
+  add("none","🗣️ Solo asistente de voz, sin música");
+  add("library","🎧 Mi música (guardada en tu teléfono)");
+  if(SONGS.length){
+    SONGS.forEach(s=>add("song:"+s.archivo,"🎵 "+s.nombre));
+  }else{
+    add("epic","🌄 Amanecer Épico (melodía integrada)");
+    add("energy","⚡ Energía Total (melodía integrada)");
+    add("power","🔥 Poder Matutino (melodía integrada)");
+  }
+  if(saved&&[...sel.options].some(o=>o.value===saved))sel.value=saved;
+  refreshMusicBox();
+}
+fetch("lista.json",{cache:"no-store"})
+  .then(r=>r.ok?r.json():null)
+  .then(list=>{
+    if(Array.isArray(list)&&list.length){
+      SONGS=list;
+      populateMusic();
+      // reaplica la selección guardada tras cargar la lista
+      try{
+        const d=JSON.parse(localStorage.getItem("couchV3")||"{}");
+        if(d.musicChoice&&[...$("musicChoice").options].some(o=>o.value===d.musicChoice))
+          $("musicChoice").value=d.musicChoice;
+      }catch(e){}
+      refreshMusicBox();
+    }
+  }).catch(()=>{});
+function playPreset(file){
+  stopPreset();
+  presetAudio=new Audio(encodeURI(file));
+  presetAudio.loop=true;
+  presetAudio.play().catch(()=>playMelody("epic")); // respaldo si el archivo falla
+}
+function stopPreset(){ if(presetAudio){presetAudio.pause();presetAudio=null;} }
+
+// ---------- Biblioteca personal (privada, guardada en el dispositivo) ----------
+let libAudio=null;
+function musicDB(){
+  return new Promise((res,rej)=>{
+    const q=indexedDB.open("couchMusic",1);
+    q.onupgradeneeded=()=>q.result.createObjectStore("songs",{keyPath:"id",autoIncrement:true});
+    q.onsuccess=()=>res(q.result);
+    q.onerror=()=>rej(q.error);
+  });
+}
+async function libAdd(files){
+  const db=await musicDB();
+  for(const f of files){
+    await new Promise((res,rej)=>{
+      const tx=db.transaction("songs","readwrite");
+      tx.objectStore("songs").add({name:f.name.replace(/\.[^.]+$/,""),blob:f});
+      tx.oncomplete=res; tx.onerror=()=>rej(tx.error);
+    });
+  }
+}
+async function libAll(){
+  const db=await musicDB();
+  return new Promise((res,rej)=>{
+    const q=db.transaction("songs").objectStore("songs").getAll();
+    q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+  });
+}
+async function libDelete(id){
+  const db=await musicDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction("songs","readwrite");
+    tx.objectStore("songs").delete(id);
+    tx.oncomplete=res; tx.onerror=()=>rej(tx.error);
+  });
+}
+async function renderLib(){
+  const songs=await libAll().catch(()=>[]);
+  const box=$("libList");
+  if(!songs.length){box.textContent="Aún no has agregado canciones.";return;}
+  const today=songs[dayIndex()%songs.length];
+  box.innerHTML="";
+  songs.forEach(s=>{
+    const row=document.createElement("div");
+    row.style.cssText="display:flex;justify-content:space-between;align-items:center;margin-top:6px";
+    const isToday=$("libRotate").checked&&s.id===today.id;
+    const span=document.createElement("span");
+    span.textContent=(isToday?"👉 ":"")+"🎵 "+s.name+(isToday?" (hoy)":"");
+    const del=document.createElement("button");
+    del.textContent="🗑"; del.style.cssText="background:none;padding:4px 8px;font-size:1rem";
+    del.onclick=async()=>{await libDelete(s.id);renderLib();};
+    row.appendChild(span); row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+$("libFiles").addEventListener("change",async e=>{
+  if(e.target.files.length){
+    await libAdd(e.target.files);
+    e.target.value="";
+    renderLib();
+    $("status").textContent="🎧 Canciones guardadas en tu teléfono (privadas).";
   }
 });
+$("libRotate").addEventListener("change",()=>{renderLib();save();});
+async function playLibrary(){
+  const songs=await libAll().catch(()=>[]);
+  if(!songs.length){playMelody("epic");return;}
+  const pick=$("libRotate").checked?songs[dayIndex()%songs.length]:songs[0];
+  if(libAudio)libAudio.pause();
+  libAudio=new Audio(URL.createObjectURL(pick.blob));
+  libAudio.loop=true;
+  libAudio.play().catch(()=>playMelody("epic"));
+  $("status").textContent="🎵 Hoy suena: "+pick.name;
+}
+
+// ---------- Música ----------
+function refreshMusicBox(){$("libraryBox").style.display=$("musicChoice").value==="library"?"block":"none";}
+$("musicChoice").addEventListener("change",()=>{refreshMusicBox();save();});
 function playMusic(){
   const c=$("musicChoice").value;
   if(c==="none")return;
-  if(c==="custom"){
-    if(customAudio){customAudio.currentTime=0;customAudio.play().catch(()=>{});}
-    else playMelody("epic");
-  }else playMelody(c);
+  if(c==="library"){playLibrary();}
+  else if(c.startsWith("song:")){playPreset(c.slice(5));}
+  else playMelody(c);
 }
 function stopMusic(){
   stopMelody();
+  stopPreset();
+  if(libAudio)libAudio.pause();
   if(customAudio)customAudio.pause();
   if(ttsAudio){ttsAudio.pause();ttsAudio=null;}
   speechSynthesis.cancel();
@@ -779,7 +886,7 @@ $("snoozeBtn").addEventListener("click",()=>{
 
 // ---------- Arranque ----------
 FIELDS.forEach(id=>$(id).addEventListener("change",save));
-load();refreshDays();refreshMusicBox();refreshVoiceBoxes();
+load();refreshDays();populateMusic();refreshVoiceBoxes();renderLib();
 setInterval(tick,1000);tick();
 if(alarmArmed)requestWakeLock();
 if("serviceWorker" in navigator){
