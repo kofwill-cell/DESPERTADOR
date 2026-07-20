@@ -260,7 +260,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = 15;
+const APP_VERSION = 16;
 const $ = id => document.getElementById(id);
 let melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
@@ -271,8 +271,8 @@ let alarmArmed=false, wakeLockObj=null;
 let gToken=null, gTokenClient=null;
 
 const GOOGLE_CLIENT_ID = "392361505389-9uh5qrs8af93c33vsup6v4kv96ls2fa8.apps.googleusercontent.com";
-// Servicio de voz compartido (Cloudflare Worker). Se completa tras desplegarlo.
-const PROXY_URL = "";
+// Servicio de voz compartido (Cloudflare Worker). Todos los usuarios lo usan sin configurar nada.
+const PROXY_URL = "https://voz-couch.kofwill.workers.dev";
 
 // ---------- Paneles ----------
 document.querySelectorAll(".cardBtn").forEach(b=>{
