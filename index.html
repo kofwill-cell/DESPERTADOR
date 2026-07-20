@@ -30,18 +30,23 @@
   .clock{font-size:2.6rem;font-weight:300;letter-spacing:1px}
   .date{color:var(--muted);font-size:.85rem;text-transform:capitalize;text-align:right;max-width:50%}
   /* Cuadrícula de tarjetas */
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .cardBtn{border:none;border-radius:28px;aspect-ratio:1/1.02;padding:16px;cursor:pointer;
-    display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;
-    color:#fff;text-align:left;transition:transform .12s}
-  .cardBtn:active{transform:scale(.97)}
-  .c-purple{background:var(--purple)} .c-coral{background:var(--coral)}
-  .c-teal{background:var(--teal)} .c-amber{background:var(--amber)}
-  .cicon{font-size:2.5rem;background:rgba(255,255,255,.92);border-radius:20px;
-    width:74px;height:74px;display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 16px rgba(0,0,0,.25);align-self:center;margin-top:8px}
-  .clabel{font-size:1.15rem;font-weight:700}
-  .cstate{display:block;font-size:.68rem;font-weight:400;opacity:.85;margin-top:2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cardBtn{position:relative;border:none;border-radius:30px;aspect-ratio:1/1.06;padding:20px 18px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;
+    color:#fff;text-align:left;overflow:hidden;transition:transform .12s;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+  .cardBtn:active{transform:scale(.96)}
+  .cardBtn::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 72% 18%,rgba(255,255,255,.30),transparent 58%)}
+  .c-purple{background:linear-gradient(145deg,#7b5cff,#5330ad)}
+  .c-coral{background:linear-gradient(145deg,#ff7a6b,#e63958)}
+  .c-teal{background:linear-gradient(145deg,#33dcbb,#0f9c84)}
+  .c-amber{background:linear-gradient(145deg,#ffcb5a,#f28f22)}
+  .cicon{position:relative;font-size:2.7rem;width:80px;height:80px;border-radius:26px;
+    display:flex;align-items:center;justify-content:center;margin-bottom:auto;
+    background:rgba(255,255,255,.20);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.5),0 10px 20px rgba(0,0,0,.22)}
+  .clabel{position:relative;font-size:1.28rem;font-weight:800;letter-spacing:-.3px;margin-top:14px}
+  .cstate{display:block;font-size:.72rem;font-weight:500;opacity:.92;margin-top:4px;line-height:1.3}
   .status{text-align:center;margin-top:16px;font-size:.88rem;color:var(--accent2);min-height:1.2em}
   .hint{font-size:.78rem;color:var(--muted);margin-top:5px;line-height:1.45}
   .hint a{color:var(--accent2)}
@@ -107,20 +112,20 @@
 
   <div class="grid">
     <button class="cardBtn c-purple" data-panel="pAlarma">
-      <span class="clabel">Alarma<span class="cstate" id="stAlarma">toca para configurar</span></span>
       <span class="cicon">⏰</span>
+      <span class="clabel">Alarma<span class="cstate" id="stAlarma">toca para configurar</span></span>
     </button>
     <button class="cardBtn c-coral" data-panel="pVoz">
-      <span class="clabel">Voz<span class="cstate" id="stVoz"></span></span>
       <span class="cicon">🎙️</span>
+      <span class="clabel">Voz<span class="cstate" id="stVoz"></span></span>
     </button>
     <button class="cardBtn c-teal" data-panel="pAgenda">
-      <span class="clabel">Agenda<span class="cstate" id="stAgenda">sin conectar</span></span>
       <span class="cicon">📅</span>
+      <span class="clabel">Agenda<span class="cstate" id="stAgenda">sin conectar</span></span>
     </button>
     <button class="cardBtn c-amber" data-panel="pMusica">
-      <span class="clabel">Música<span class="cstate" id="stMusica"></span></span>
       <span class="cicon">🎵</span>
+      <span class="clabel">Música<span class="cstate" id="stMusica"></span></span>
     </button>
   </div>
 
@@ -161,11 +166,11 @@
   <div class="sheetbody">
     <label>Motor de voz</label>
     <select id="voiceEngine">
-      <option value="gemini">🎙️ Gemini — expresiva, como un coach (usa tu clave)</option>
-      <option value="browser">📱 Voz del teléfono — gratis</option>
+      <option value="gemini">✨ Voz premium del coach (automática, sin configurar)</option>
+      <option value="browser">📱 Voz del teléfono — gratis, offline</option>
     </select>
     <div id="geminiVoiceBox">
-      <label>Voz de Gemini</label>
+      <label>Estilo de voz</label>
       <select id="geminiVoice">
         <option value="Puck">Puck — enérgica y alegre</option>
         <option value="Kore">Kore — firme y motivadora</option>
@@ -173,9 +178,15 @@
         <option value="Aoede">Aoede — fresca y natural</option>
         <option value="Charon">Charon — grave y serena</option>
       </select>
-      <label>Clave API de Gemini (alimenta la voz)</label>
-      <input type="password" id="geminiKey" placeholder="Pega aquí tu clave (AIza...)">
-      <p class="hint">Gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Se guarda solo en tu teléfono. Si la voz falla, uso la del teléfono automáticamente.</p>
+      <p class="hint">La voz premium suena sola, sin que configures nada. Requiere internet.</p>
+      <details>
+        <summary>Avanzado: usar mi propia clave de Gemini</summary>
+        <label>Clave API de Gemini (opcional, para no usar el servicio compartido)</label>
+        <input type="password" id="geminiKey" placeholder="Pega tu clave (AIza...)">
+        <label>Dirección del servicio de voz (proxy)</label>
+        <input type="url" id="proxyUrl" placeholder="https://tu-worker.workers.dev">
+        <p class="hint">Gratis en <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>. Se guarda solo en tu teléfono.</p>
+      </details>
     </div>
     <div id="browserVoiceBox">
       <label>Voz del teléfono (en español)</label>
@@ -249,7 +260,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = 14;
+const APP_VERSION = 15;
 const $ = id => document.getElementById(id);
 let melodyTimer=null, audioCtx=null, previewing=false;
 let weatherText="", weatherShort="", cityName="";
@@ -260,6 +271,8 @@ let alarmArmed=false, wakeLockObj=null;
 let gToken=null, gTokenClient=null;
 
 const GOOGLE_CLIENT_ID = "392361505389-9uh5qrs8af93c33vsup6v4kv96ls2fa8.apps.googleusercontent.com";
+// Servicio de voz compartido (Cloudflare Worker). Se completa tras desplegarlo.
+const PROXY_URL = "";
 
 // ---------- Paneles ----------
 document.querySelectorAll(".cardBtn").forEach(b=>{
@@ -270,12 +283,14 @@ document.querySelectorAll(".closeBtn").forEach(b=>{
 });
 function refreshCards(){
   $("stAlarma").textContent=alarmArmed?("activa · "+$("alarmTime").value):"toca para configurar";
-  $("stVoz").textContent=$("voiceEngine").value==="gemini"?($("geminiKey").value.trim()?"Gemini · "+$("geminiVoice").value:"Gemini (falta clave)"):"voz del teléfono";
+  $("stVoz").textContent=$("voiceEngine").value==="gemini"?(hasPremiumVoice()?"premium · "+$("geminiVoice").value:"premium (aún no disponible)"):"voz del teléfono";
   $("stMusica").textContent=$("musicChoice").value==="none"?"sin música":$("musicChoice").value==="bells"?"campanas suaves":"mi música";
 }
 
 // ---------- Persistencia ----------
-const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","geminiModel","goals","icsUrl","useProxy","musicChoice","libRotate","wakeLock"];
+const FIELDS=["userName","alarmTime","repeatMode","voiceEngine","geminiVoice","voiceSelect","useAI","geminiKey","proxyUrl","geminiModel","goals","icsUrl","useProxy","musicChoice","libRotate","wakeLock"];
+function voiceProxy(){return (PROXY_URL||$("proxyUrl").value.trim()).replace(/\/$/,"");}
+function hasPremiumVoice(){return !!($("geminiKey").value.trim()||voiceProxy());}
 function save(){
   try{
     const d={};
@@ -398,51 +413,72 @@ function pcmBase64ToWavUrl(b64,rate){
   ws(36,"data");v.setUint32(40,pcm.length,true);
   return URL.createObjectURL(new Blob([h,pcm],{type:"audio/wav"}));
 }
-// Genera el audio de Gemini y devuelve la URL (o null). Se usa para hablar Y para pre-generar.
+// Genera el audio premium y devuelve la URL (o null). Usa clave propia O el proxy compartido.
 function geminiTTSUrl(text){
   const key=$("geminiKey").value.trim();
-  if(!key)return Promise.resolve(null);
+  const proxy=voiceProxy();
   const voice=$("geminiVoice").value||"Puck";
-  const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
-  const ttsModels=["gemini-3.1-flash-tts-preview","gemini-2.5-flash-preview-tts"];
-  function intentoTTS(i){
-    if(i>=ttsModels.length)return Promise.resolve(null);
-    const ctrl=new AbortController();
-    ttsCtrl=ctrl;
-    const timer=setTimeout(()=>ctrl.abort(),40000);
-    return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        contents:[{parts:[{text:styled}]}],
-        generationConfig:{responseModalities:["AUDIO"],
-          speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:voice}}}}
-      }),
-      signal:ctrl.signal
-    })
-    .then(r=>{clearTimeout(timer);if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(d=>{
-      const part=d.candidates[0].content.parts.find(p=>p.inlineData);
-      const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
-      return pcmBase64ToWavUrl(part.inlineData.data,rateM?+rateM[1]:24000);
-    })
-    .catch(err=>{
-      clearTimeout(timer);
-      if(String(err.message)==="404")return intentoTTS(i+1);
-      return null;
-    });
+  // Opción A: clave propia → llama directo a Google
+  if(key){
+    const styled=`Di lo siguiente en español, con tono cálido, enérgico y motivador, como un coach personal despertando a alguien con entusiasmo. Marca énfasis en las exclamaciones y baja el ritmo al mencionar la agenda:\n\n${text}`;
+    const ttsModels=["gemini-3.1-flash-tts-preview","gemini-2.5-flash-preview-tts"];
+    function intentoTTS(i){
+      if(i>=ttsModels.length)return Promise.resolve(null);
+      const ctrl=new AbortController(); ttsCtrl=ctrl;
+      const timer=setTimeout(()=>ctrl.abort(),40000);
+      return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${ttsModels[i]}:generateContent?key=${key}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:styled}]}],
+          generationConfig:{responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:voice}}}}}),
+        signal:ctrl.signal
+      })
+      .then(r=>{clearTimeout(timer);if(!r.ok)throw new Error(r.status);return r.json();})
+      .then(d=>{
+        const part=d.candidates[0].content.parts.find(p=>p.inlineData);
+        const rateM=(part.inlineData.mimeType||"").match(/rate=(\d+)/);
+        return pcmBase64ToWavUrl(part.inlineData.data,rateM?+rateM[1]:24000);
+      })
+      .catch(err=>{clearTimeout(timer);if(String(err.message)==="404")return intentoTTS(i+1);return null;});
+    }
+    return intentoTTS(0);
   }
-  return intentoTTS(0);
+  // Opción B: proxy compartido → el usuario no configura nada
+  if(proxy){
+    const ctrl=new AbortController(); ttsCtrl=ctrl;
+    const timer=setTimeout(()=>ctrl.abort(),40000);
+    return fetch(proxy,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text,voice}),signal:ctrl.signal})
+      .then(r=>{clearTimeout(timer);if(!r.ok)throw new Error(r.status);return r.blob();})
+      .then(b=>URL.createObjectURL(b))
+      .catch(()=>null);
+  }
+  return Promise.resolve(null);
 }
+// Habla con arranque rápido: genera y reproduce la 1ª frase mientras prepara el resto en paralelo
 function speakGemini(text,onEnd,onStart){
   const my=++speakSession;
+  const m=text.match(/^([\s\S]*?[.!?¡])\s+([\s\S]+)$/);
+  const first=m?m[1]:text, rest=m?m[2]:"";
   $("status").textContent="🎙️ Generando voz...";
-  geminiTTSUrl(text).then(url=>{
+  const restP = rest ? geminiTTSUrl(rest) : Promise.resolve(null);
+  geminiTTSUrl(first).then(url1=>{
     if(my!==speakSession)return;
     $("status").textContent="";
-    if(!url){speakSegmented(text,onEnd,onStart);return;}
+    if(!url1){speakSegmented(text,onEnd,onStart);return;}
     if(onStart)onStart();
-    ttsAudio=new Audio(url);
-    ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
+    ttsAudio=new Audio(url1);
+    ttsAudio.onended=()=>{
+      if(my!==speakSession)return;
+      restP.then(url2=>{
+        if(my!==speakSession){if(onEnd)onEnd();return;}
+        if(url2){
+          ttsAudio=new Audio(url2);
+          ttsAudio.onended=()=>{if(my===speakSession&&onEnd)onEnd();};
+          ttsAudio.onerror=()=>{if(my===speakSession&&onEnd)onEnd();};
+          ttsAudio.play().catch(()=>{if(my===speakSession&&onEnd)onEnd();});
+        }else if(onEnd)onEnd();
+      });
+    };
     ttsAudio.onerror=()=>{if(my===speakSession)speakSegmented(text,onEnd,onStart);};
     ttsAudio.play().catch(()=>{if(my===speakSession)speakSegmented(text,onEnd,onStart);});
   });
@@ -450,7 +486,7 @@ function speakGemini(text,onEnd,onStart){
 
 function speak(text,onEnd,onStart){
   stopSpeaking();
-  if($("voiceEngine").value==="gemini"&&$("geminiKey").value.trim())speakGemini(text,onEnd,onStart);
+  if($("voiceEngine").value==="gemini"&&hasPremiumVoice())speakGemini(text,onEnd,onStart);
   else speakSegmented(text,onEnd,onStart);
 }
 function refreshVoiceBoxes(){
@@ -909,7 +945,7 @@ function prepareWake(now){
   fetchWeather();
   refreshCalendar(()=>{
     const build=msg=>{
-      if($("voiceEngine").value==="gemini"&&$("geminiKey").value.trim()){
+      if($("voiceEngine").value==="gemini"&&hasPremiumVoice()){
         geminiTTSUrl(msg).then(url=>{prep={key:k,msg,audioUrl:url,preparing:false};});
       }else prep={key:k,msg,audioUrl:null,preparing:false};
     };
